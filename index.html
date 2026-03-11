@@ -371,7 +371,7 @@
   <div class="sticky">
     <div class="sticky-inner">
       <div id="stickyTotal" class="sticky-total">AED 0</div>
-      <button id="checkoutBtn" class="checkout-btn">Checkout</button>
+      <button id="checkoutBtn" class="checkout-btn">Pay</button>
     </div>
   </div>
 
@@ -539,11 +539,41 @@ products = data.products.sort((a,b) => a.sort - b.sort);
       checkoutBtn.disabled = false;
     }
 
-    checkoutBtn.addEventListener("click", () => {
-      if (!cart.length) return;
-      checkoutPanel.classList.remove("hidden");
-      checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    checkoutBtn.addEventListener("click", async () => {
+  if (!cart.length) return;
+
+  checkoutPanel.classList.remove("hidden");
+  checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const items = getCartDetailed().map(item => ({
+    name: item.product.name,
+    price: Number(item.product.price),
+    quantity: item.quantity
+  }));
+
+  try {
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ items })
     });
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url;
+      return;
+    }
+
+    alert("Could not start payment.");
+    console.log(data);
+  } catch (error) {
+    alert("Payment error.");
+    console.error(error);
+  }
+});
 
     function escapeHtml(str){
       return String(str)
