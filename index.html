@@ -541,7 +541,19 @@ products = data.products.sort((a,b) => a.sort - b.sort);
 
     checkoutBtn.addEventListener("click", async () => {
   if (!cart.length) return;
+const customerName = document.getElementById("customerName").value.trim();
+const recipientName = document.getElementById("recipientName").value.trim();
+const recipientPhone = document.getElementById("recipientPhone").value.trim();
+const deliveryDate = document.getElementById("deliveryDate").value;
+const deliverySlot = document.getElementById("deliverySlot").value;
+const address = document.getElementById("address").value.trim();
 
+if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
+  alert("Please fill in all delivery details before payment.");
+  checkoutPanel.classList.remove("hidden");
+  checkoutPanel.scrollIntoView({ behavior: "smooth" });
+  return;
+}
   checkoutPanel.classList.remove("hidden");
   checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 
