@@ -376,12 +376,7 @@
   </div>
 
   <script>
-    const BASE_ID = "appR99ityFDyaQBNM";
-    const TABLE = "Products";
-    const VIEW = "Store";
-    const TOKEN = "patIoNIQLjygPpciX.02ccdc7ec3782e561cb23496502f4a75ace6a2d33d3192b7b8030dd66ef4897a";
-
-    const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE)}?view=${encodeURIComponent(VIEW)}`;
+    const url = "/api/products";
 
     let products = [];
     let selectedCategory = "All";
@@ -395,31 +390,15 @@
     const checkoutPanel = document.getElementById("checkoutPanel");
 
     async function loadProducts(){
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${TOKEN}`
-        }
-      });
+     const res = await fetch(url);
+const data = await res.json();
 
-      const data = await res.json();
+if (!data.products) {
+  productsEl.innerHTML = `<div class="empty">Could not load products.</div>`;
+  return;
+}
 
-      if (!data.records) {
-        productsEl.innerHTML = `<div class="empty">Could not load products.</div>`;
-        return;
-      }
-
-      products = data.records.map(record => {
-        const fields = record.fields || {};
-        return {
-          id: record.id,
-          name: fields.Name || "Untitled",
-          price: fields["Price AED"] || 0,
-          photo: fields.Photo?.[0]?.url || "",
-          description: fields.Description || "",
-          category: fields.Category || "Other",
-          sort: fields.Sort || 999
-        };
-      }).sort((a,b) => a.sort - b.sort);
+products = data.products.sort((a,b) => a.sort - b.sort);
 
       renderCategories();
       renderProducts();
