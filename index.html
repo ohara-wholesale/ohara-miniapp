@@ -1,119 +1,585 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Ohara Bunch</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>Ohara Bunch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#f7f2ec;
+      --card:#ffffff;
+      --text:#111111;
+      --muted:#6d6d6d;
+      --line:#e9e2d8;
+      --accent:#000000;
+      --ticker:#dff34a;
+    }
 
-<style>
-body{
-font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-background:#f7f2ec;
-margin:0;
-padding:20px;
-}
+    *{
+      box-sizing:border-box;
+    }
 
-h1{
-font-size:28px;
-margin-bottom:20px;
-}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
 
-.grid{
-display:grid;
-grid-template-columns:1fr;
-gap:16px;
-}
+    .page{
+      max-width:760px;
+      margin:0 auto;
+      padding:20px 16px 140px;
+    }
 
-.card{
-background:white;
-border-radius:16px;
-overflow:hidden;
-box-shadow:0 4px 16px rgba(0,0,0,0.05);
-}
+    .header{
+      margin-bottom:16px;
+    }
 
-.card img{
-width:100%;
-height:220px;
-object-fit:cover;
-object-fit:cover;
-}
+    .brand{
+      font-size:34px;
+      line-height:1;
+      font-weight:800;
+      margin:0 0 14px;
+    }
 
-.card-body{
-padding:16px;
-}
+    .ticker-wrap{
+      overflow:hidden;
+      background:var(--ticker);
+      border-radius:16px;
+      padding:10px 0;
+      margin-bottom:18px;
+      border:1px solid rgba(0,0,0,0.06);
+    }
 
-.price{
-font-weight:700;
-margin-top:6px;
-}
+    .ticker{
+      white-space:nowrap;
+      display:inline-block;
+      padding-left:100%;
+      animation:tickerMove 24s linear infinite;
+      font-size:15px;
+      font-weight:600;
+    }
 
-button{
-margin-top:10px;
-padding:12px;
-border:none;
-border-radius:10px;
-background:black;
-color:white;
-font-size:16px;
-width:100%;
-}
-</style>
+    @keyframes tickerMove{
+      0%{transform:translateX(0);}
+      100%{transform:translateX(-100%);}
+    }
 
+    .section-title{
+      font-size:20px;
+      font-weight:700;
+      margin:0 0 12px;
+    }
+
+    .chips{
+      display:flex;
+      gap:10px;
+      overflow:auto;
+      padding-bottom:6px;
+      margin-bottom:18px;
+      scrollbar-width:none;
+    }
+
+    .chips::-webkit-scrollbar{
+      display:none;
+    }
+
+    .chip{
+      flex:0 0 auto;
+      border:1px solid #111;
+      background:transparent;
+      color:#111;
+      border-radius:999px;
+      padding:10px 16px;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+      margin:0;
+      width:auto;
+    }
+
+    .chip.active{
+      background:#111;
+      color:#fff;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:16px;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:0 4px 18px rgba(0,0,0,0.05);
+      border:1px solid var(--line);
+    }
+
+    .card img{
+      width:100%;
+      height:280px;
+      object-fit:cover;
+      display:block;
+      background:#eee;
+    }
+
+    .card-body{
+      padding:16px;
+    }
+
+    .product-name{
+      font-size:18px;
+      font-weight:700;
+      margin:0 0 6px;
+    }
+
+    .product-desc{
+      margin:0 0 10px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .product-meta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .price{
+      font-size:18px;
+      font-weight:800;
+    }
+
+    button{
+      border:none;
+      border-radius:14px;
+      background:var(--accent);
+      color:#fff;
+      font-size:16px;
+      font-weight:600;
+      padding:13px 16px;
+      cursor:pointer;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:15px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:18px;
+    }
+
+    .cart-section{
+      margin-top:26px;
+    }
+
+    .cart-box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      overflow:hidden;
+    }
+
+    .cart-item{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      padding:16px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .cart-item:last-child{
+      border-bottom:none;
+    }
+
+    .cart-name{
+      font-weight:700;
+      margin-bottom:6px;
+    }
+
+    .cart-sub{
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+
+    .qty{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .qty-btn{
+      width:34px;
+      height:34px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#111;
+      font-size:20px;
+      line-height:1;
+      padding:0;
+      cursor:pointer;
+    }
+
+    .qty-num{
+      min-width:18px;
+      text-align:center;
+      font-weight:700;
+    }
+
+    .cart-total{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:16px;
+      background:#fcfaf7;
+      font-size:18px;
+      font-weight:800;
+      border-top:1px solid var(--line);
+    }
+
+    .sticky{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+      background:rgba(247,242,236,0.94);
+      backdrop-filter:blur(10px);
+      border-top:1px solid var(--line);
+    }
+
+    .sticky-inner{
+      max-width:760px;
+      margin:0 auto;
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .sticky-total{
+      flex:1;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:16px;
+      font-weight:800;
+    }
+
+    .checkout-btn{
+      min-width:170px;
+    }
+
+    .checkout-panel{
+      margin-top:20px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:16px;
+    }
+
+    .checkout-grid{
+      display:grid;
+      gap:12px;
+    }
+
+    input, select, textarea{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:13px 14px;
+      font-size:15px;
+      background:#fff;
+    }
+
+    textarea{
+      min-height:90px;
+      resize:vertical;
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .mini-note{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+    }
+  </style>
 </head>
-
 <body>
+  <div class="page">
+    <div class="header">
+      <h1 class="brand">Ohara.Bunch 🌸</h1>
+      <div class="ticker-wrap">
+        <div class="ticker">
+          Ohara Bunch. Premium flowers. Honest price. From the plantation — straight to your vase. Same day delivery in Dubai.
+        </div>
+      </div>
+    </div>
 
-<h1>Ohara.Bunch 🌸</h1>
+    <h2 class="section-title">Categories</h2>
+    <div id="categoryChips" class="chips"></div>
 
-<div id="products" class="grid"></div>
+    <h2 class="section-title">Catalog</h2>
+    <div id="products" class="grid"></div>
 
-<script>
+    <div class="cart-section">
+      <h2 class="section-title">Cart</h2>
+      <div id="cartBox" class="cart-box">
+        <div class="empty">Your cart is empty.</div>
+      </div>
+    </div>
 
-const BASE_ID = "appR99ityFDyaQBNM"
-const TABLE = "Products"
-const VIEW = "Store"
-const TOKEN = "patIoNIQLjygPpciX.02ccdc7ec3782e561cb23496502f4a75ace6a2d33d3192b7b8030dd66ef4897a"
+    <div id="checkoutPanel" class="checkout-panel hidden">
+      <h2 class="section-title" style="margin-top:0;">Delivery details</h2>
+      <div class="checkout-grid">
+        <input id="customerName" type="text" placeholder="Your name" />
+        <input id="recipientName" type="text" placeholder="Recipient name" />
+        <input id="recipientPhone" type="tel" placeholder="Recipient phone" />
+        <input id="deliveryDate" type="date" />
+        <select id="deliverySlot">
+          <option value="">Choose delivery time</option>
+          <option value="10:00–14:00">10:00–14:00</option>
+          <option value="14:00–18:00">14:00–18:00</option>
+          <option value="18:00–22:00">18:00–22:00</option>
+        </select>
+        <input id="area" type="text" placeholder="Area (e.g. Dubai Marina)" />
+        <textarea id="address" placeholder="Building / Villa / Apartment / Landmark"></textarea>
+        <textarea id="cardText" placeholder="Card message"></textarea>
+      </div>
+      <div class="mini-note">
+        This is the checkout draft step. Payment and Telegram submission can be added next.
+      </div>
+    </div>
+  </div>
 
-const url = `https://api.airtable.com/v0/${BASE_ID}/${TABLE}?view=${VIEW}`
+  <div class="sticky">
+    <div class="sticky-inner">
+      <div id="stickyTotal" class="sticky-total">AED 0</div>
+      <button id="checkoutBtn" class="checkout-btn">Checkout</button>
+    </div>
+  </div>
 
-async function loadProducts(){
+  <script>
+    const BASE_ID = "appR99ityFDyaQBNM";
+    const TABLE = "Products";
+    const VIEW = "Store";
+    const TOKEN = "patIoNIQLjygPpciX.02ccdc7ec3782e561cb23496502f4a75ace6a2d33d3192b7b8030dd66ef4897a";
 
-const res = await fetch(url,{
-headers:{
-Authorization:`Bearer ${TOKEN}`
-}
-})
+    const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE)}?view=${encodeURIComponent(VIEW)}`;
 
-const data = await res.json()
+    let products = [];
+    let selectedCategory = "All";
+    let cart = [];
 
-const container = document.getElementById("products")
+    const productsEl = document.getElementById("products");
+    const categoryChipsEl = document.getElementById("categoryChips");
+    const cartBoxEl = document.getElementById("cartBox");
+    const stickyTotalEl = document.getElementById("stickyTotal");
+    const checkoutBtn = document.getElementById("checkoutBtn");
+    const checkoutPanel = document.getElementById("checkoutPanel");
 
-data.records.forEach(record=>{
+    async function loadProducts(){
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`
+        }
+      });
 
-const name = record.fields.Name
-const price = record.fields["Price AED"]
-const photo = record.fields.Photo?.[0]?.url
+      const data = await res.json();
 
-const card = document.createElement("div")
-card.className="card"
+      if (!data.records) {
+        productsEl.innerHTML = `<div class="empty">Could not load products.</div>`;
+        return;
+      }
 
-card.innerHTML=`
-<img src="${photo}">
-<div class="card-body">
-<div>${name}</div>
-<div class="price">AED ${price}</div>
-<button>Add to cart</button>
-</div>
-`
+      products = data.records.map(record => {
+        const fields = record.fields || {};
+        return {
+          id: record.id,
+          name: fields.Name || "Untitled",
+          price: fields["Price AED"] || 0,
+          photo: fields.Photo?.[0]?.url || "",
+          description: fields.Description || "",
+          category: fields.Category || "Other",
+          sort: fields.Sort || 999
+        };
+      }).sort((a,b) => a.sort - b.sort);
 
-container.appendChild(card)
+      renderCategories();
+      renderProducts();
+      renderCart();
+    }
 
-})
+    function getCategories(){
+      const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+      return ["All", ...categories];
+    }
 
-}
+    function renderCategories(){
+      const categories = getCategories();
+      categoryChipsEl.innerHTML = "";
 
-loadProducts()
+      categories.forEach(category => {
+        const btn = document.createElement("button");
+        btn.className = "chip" + (selectedCategory === category ? " active" : "");
+        btn.textContent = category;
+        btn.onclick = () => {
+          selectedCategory = category;
+          renderCategories();
+          renderProducts();
+        };
+        categoryChipsEl.appendChild(btn);
+      });
+    }
 
-</script>
+    function renderProducts(){
+      let visibleProducts = products;
 
+      if (selectedCategory !== "All") {
+        visibleProducts = products.filter(p => p.category === selectedCategory);
+      }
+
+      if (!visibleProducts.length) {
+        productsEl.innerHTML = `<div class="empty">No products in this category.</div>`;
+        return;
+      }
+
+      productsEl.innerHTML = "";
+
+      visibleProducts.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          ${product.photo ? `<img src="${product.photo}" alt="${escapeHtml(product.name)}">` : ""}
+          <div class="card-body">
+            <div class="product-name">${escapeHtml(product.name)}</div>
+            ${product.description ? `<div class="product-desc">${escapeHtml(product.description)}</div>` : ""}
+            <div class="product-meta">
+              <div class="price">AED ${Number(product.price).toFixed(0)}</div>
+              <button onclick="addToCart('${jsEscape(product.id)}')">Add to cart</button>
+            </div>
+          </div>
+        `;
+        productsEl.appendChild(card);
+      });
+    }
+
+    function addToCart(productId){
+      const existing = cart.find(item => item.productId === productId);
+
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ productId, quantity: 1 });
+      }
+
+      renderCart();
+    }
+
+    function changeQty(productId, delta){
+      const item = cart.find(i => i.productId === productId);
+      if (!item) return;
+
+      item.quantity += delta;
+
+      if (item.quantity <= 0) {
+        cart = cart.filter(i => i.productId !== productId);
+      }
+
+      renderCart();
+    }
+
+    function getCartDetailed(){
+      return cart.map(item => {
+        const product = products.find(p => p.id === item.productId);
+        return {
+          ...item,
+          product
+        };
+      }).filter(item => item.product);
+    }
+
+    function getCartTotal(){
+      return getCartDetailed().reduce((sum, item) => {
+        return sum + (Number(item.product.price) * item.quantity);
+      }, 0);
+    }
+
+    function renderCart(){
+      const items = getCartDetailed();
+
+      if (!items.length) {
+        cartBoxEl.innerHTML = `<div class="empty">Your cart is empty.</div>`;
+        stickyTotalEl.textContent = "AED 0";
+        checkoutBtn.disabled = true;
+        checkoutPanel.classList.add("hidden");
+        return;
+      }
+
+      cartBoxEl.innerHTML = items.map(item => {
+        const lineTotal = Number(item.product.price) * item.quantity;
+        return `
+          <div class="cart-item">
+            <div>
+              <div class="cart-name">${escapeHtml(item.product.name)}</div>
+              <div class="cart-sub">AED ${Number(item.product.price).toFixed(0)} each</div>
+              <div class="qty">
+                <button class="qty-btn" onclick="changeQty('${jsEscape(item.productId)}', -1)">−</button>
+                <div class="qty-num">${item.quantity}</div>
+                <button class="qty-btn" onclick="changeQty('${jsEscape(item.productId)}', 1)">+</button>
+              </div>
+            </div>
+            <div class="price">AED ${lineTotal.toFixed(0)}</div>
+          </div>
+        `;
+      }).join("") + `
+        <div class="cart-total">
+          <span>Total</span>
+          <span>AED ${getCartTotal().toFixed(0)}</span>
+        </div>
+      `;
+
+      stickyTotalEl.textContent = `AED ${getCartTotal().toFixed(0)}`;
+      checkoutBtn.disabled = false;
+    }
+
+    checkoutBtn.addEventListener("click", () => {
+      if (!cart.length) return;
+      checkoutPanel.classList.remove("hidden");
+      checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function jsEscape(str){
+      return String(str).replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+    }
+
+    loadProducts();
+  </script>
 </body>
 </html>
