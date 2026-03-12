@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     const order = await createRecord("Orders", orderFields);
 
     if (metadata.items_json) {
-      const items = JSON.parse(metadata.items_json);
+      const items = JSON.parse(decodeURIComponent(metadata.items_json));
 
       for (const item of items) {
        await createRecord("Order items", {
