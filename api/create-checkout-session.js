@@ -16,14 +16,12 @@ export default async function handler(req, res) {
       cardText
     } = req.body || {};
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!items  !Array.isArray(items)  items.length === 0) {
       return res.status(400).json({ error: "No items provided" });
     }
 
-    if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
-      return res.status(400).json({
-        error: "Missing checkout fields"
-      });
+    if (!customerName  !recipientName  !recipientPhone  !deliveryDate  !deliverySlot || !address) {
+      return res.status(400).json({ error: "Missing checkout fields" });
     }
 
     const subtotal = items.reduce((sum, item) => {
@@ -47,7 +45,6 @@ export default async function handler(req, res) {
     params.append("line_items[0][quantity]", "1");
 
     params.append("metadata[source]", "telegram-miniapp");
-    params.append("metadata[customer_name]", customerName);
     params.append("metadata[recipient_name]", recipientName);
     params.append("metadata[recipient_phone]", recipientPhone);
     params.append("metadata[delivery_date]", deliveryDate);
@@ -58,11 +55,12 @@ export default async function handler(req, res) {
     params.append("metadata[subtotal_aed]", String(subtotal));
     params.append("metadata[delivery_fee_aed]", String(deliveryFee));
     params.append("metadata[total_aed]", String(total));
+    params.append("metadata[items_json]", JSON.stringify(items));
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+        Authorization: Bearer ${process.env.STRIPE_SECRET_KEY},
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: params.toString(),
