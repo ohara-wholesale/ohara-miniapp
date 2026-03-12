@@ -12,12 +12,10 @@
       --muted:#6d6d6d;
       --line:#e9e2d8;
       --accent:#000000;
-      --ticker:#faf0f4;
+      --ticker:#FAF0F4;
     }
 
-    *{
-      box-sizing:border-box;
-    }
+    *{ box-sizing:border-box; }
 
     body{
       margin:0;
@@ -32,9 +30,7 @@
       padding:20px 16px 140px;
     }
 
-    .header{
-      margin-bottom:16px;
-    }
+    .header{ margin-bottom:16px; }
 
     .brand{
       font-size:34px;
@@ -81,9 +77,7 @@
       scrollbar-width:none;
     }
 
-    .chips::-webkit-scrollbar{
-      display:none;
-    }
+    .chips::-webkit-scrollbar{ display:none; }
 
     .chip{
       flex:0 0 auto;
@@ -126,9 +120,7 @@
       background:#eee;
     }
 
-    .card-body{
-      padding:16px;
-    }
+    .card-body{ padding:16px; }
 
     .product-name{
       font-size:18px;
@@ -166,6 +158,11 @@
       cursor:pointer;
     }
 
+    button:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+
     .empty{
       color:var(--muted);
       font-size:15px;
@@ -175,9 +172,7 @@
       padding:18px;
     }
 
-    .cart-section{
-      margin-top:26px;
-    }
+    .cart-section{ margin-top:26px; }
 
     .cart-box{
       background:#fff;
@@ -194,9 +189,7 @@
       border-bottom:1px solid var(--line);
     }
 
-    .cart-item:last-child{
-      border-bottom:none;
-    }
+    .cart-item:last-child{ border-bottom:none; }
 
     .cart-name{
       font-weight:700;
@@ -274,9 +267,7 @@
       font-weight:800;
     }
 
-    .checkout-btn{
-      min-width:170px;
-    }
+    .checkout-btn{ min-width:170px; }
 
     .checkout-panel{
       margin-top:20px;
@@ -305,19 +296,12 @@
       resize:vertical;
     }
 
-    .hidden{
-      display:none;
-    }
+    .hidden{ display:none; }
 
-    .muted{
-      color:var(--muted);
-      font-size:14px;
-    }
-
-    .mini-note{
+    .footer-note{
       margin-top:10px;
-      font-size:13px;
       color:var(--muted);
+      font-size:13px;
     }
   </style>
 </head>
@@ -362,8 +346,8 @@
         <textarea id="address" placeholder="Building / Villa / Apartment / Landmark"></textarea>
         <textarea id="cardText" placeholder="Card message"></textarea>
       </div>
-      <div class="mini-note">
-        Please ensure that all delivery details are entered accurately to avoid potential delays in shipment.
+      <div class="footer-note">
+        Please ensure that all delivery details are entered before payment.
       </div>
     </div>
   </div>
@@ -371,158 +355,155 @@
   <div class="sticky">
     <div class="sticky-inner">
       <div id="stickyTotal" class="sticky-total">AED 0</div>
-      <button id="checkoutBtn" class="checkout-btn">Pay</button>
+      <button id="checkoutBtn" class="checkout-btn" disabled>Pay</button>
     </div>
   </div>
 
   <script>
-  const url = "/api/products";
+    const url = "/api/products";
 
-  let products = [];
-  let selectedCategory = "All";
-  let cart = [];
+    let products = [];
+    let selectedCategory = "All";
+    let cart = [];
 
-  const productsEl = document.getElementById("products");
-  const categoryChipsEl = document.getElementById("categoryChips");
-  const cartBoxEl = document.getElementById("cartBox");
-  const stickyTotalEl = document.getElementById("stickyTotal");
-  const checkoutBtn = document.getElementById("checkoutBtn");
-  const checkoutPanel = document.getElementById("checkoutPanel");
+    const productsEl = document.getElementById("products");
+    const categoryChipsEl = document.getElementById("categoryChips");
+    const cartBoxEl = document.getElementById("cartBox");
+    const stickyTotalEl = document.getElementById("stickyTotal");
+    const checkoutBtn = document.getElementById("checkoutBtn");
+    const checkoutPanel = document.getElementById("checkoutPanel");
 
-  async function loadProducts() {
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
+    async function loadProducts() {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
 
-      if (!data.products) {
+        if (!data.products || !Array.isArray(data.products)) {
+          productsEl.innerHTML = `<div class="empty">Could not load products.</div>`;
+          return;
+        }
+
+        products = data.products.sort((a, b) => Number(a.sort || 999) - Number(b.sort || 999));
+
+        renderCategories();
+        renderProducts();
+        renderCart();
+      } catch (error) {
+        console.error(error);
         productsEl.innerHTML = `<div class="empty">Could not load products.</div>`;
+      }
+    }
+
+    function getCategories() {
+      const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+      return ["All", ...categories];
+    }
+
+    function renderCategories() {
+      const categories = getCategories();
+      categoryChipsEl.innerHTML = "";
+
+      categories.forEach(category => {
+        const btn = document.createElement("button");
+        btn.className = "chip" + (selectedCategory === category ? " active" : "");
+        btn.textContent = category;
+        btn.type = "button";
+        btn.onclick = () => {
+          selectedCategory = category;
+          renderCategories();
+          renderProducts();
+        };
+        categoryChipsEl.appendChild(btn);
+      });
+    }
+
+    function renderProducts() {
+      let visibleProducts = products;
+
+      if (selectedCategory !== "All") {
+        visibleProducts = products.filter(p => p.category === selectedCategory);
+      }
+
+      if (!visibleProducts.length) {
+        productsEl.innerHTML = `<div class="empty">No products in this category.</div>`;
         return;
       }
 
-      products = data.products.sort((a, b) => a.sort - b.sort);
+      productsEl.innerHTML = "";
 
-      renderCategories();
-      renderProducts();
-      renderCart();
-    } catch (error) {
-      console.error(error);
-      productsEl.innerHTML = `<div class="empty">Could not load products.</div>`;
-    }
-  }
+      visibleProducts.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "card";
 
-  function getCategories() {
-    const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
-    return ["All", ...categories];
-  }
-
-  function renderCategories() {
-    const categories = getCategories();
-    categoryChipsEl.innerHTML = "";
-
-    categories.forEach((category) => {
-      const btn = document.createElement("button");
-      btn.className = "chip" + (selectedCategory === category ? " active" : "");
-      btn.textContent = category;
-      btn.onclick = () => {
-        selectedCategory = category;
-        renderCategories();
-        renderProducts();
-      };
-      categoryChipsEl.appendChild(btn);
-    });
-  }
-
-  function renderProducts() {
-    let visibleProducts = products;
-
-    if (selectedCategory !== "All") {
-      visibleProducts = products.filter((p) => p.category === selectedCategory);
-    }
-
-    if (!visibleProducts.length) {
-      productsEl.innerHTML = `<div class="empty">No products in this category.</div>`;
-      return;
-    }
-
-    productsEl.innerHTML = "";
-
-    visibleProducts.forEach((product) => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      card.innerHTML = `
-        ${product.photo ? `<img src="${product.photo}" alt="${escapeHtml(product.name)}">` : ""}
-        <div class="card-body">
-          <div class="product-name">${escapeHtml(product.name)}</div>
-          ${product.description ? `<div class="product-desc">${escapeHtml(product.description)}</div>` : ""}
-          <div class="product-meta">
-            <div class="price">AED ${Number(product.price).toFixed(0)}</div>
-            <button onclick="addToCart('${jsEscape(product.id)}')">Add to cart</button>
+        card.innerHTML = `
+          ${product.photo ? `<img src="${product.photo}" alt="${escapeHtml(product.name)}">` : ""}
+          <div class="card-body">
+            <div class="product-name">${escapeHtml(product.name)}</div>
+            ${product.description ? `<div class="product-desc">${escapeHtml(product.description)}</div>` : ""}
+            <div class="product-meta">
+              <div class="price">AED ${Number(product.price).toFixed(0)}</div>
+              <button type="button" onclick="addToCart('${jsEscape(product.id)}')">Add to cart</button>
+            </div>
           </div>
-        </div>
-      `;
+        `;
 
-      productsEl.appendChild(card);
-    });
-  }
-
-  function addToCart(productId) {
-    const existing = cart.find((item) => item.productId === productId);
-
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      cart.push({ productId, quantity: 1 });
+        productsEl.appendChild(card);
+      });
     }
 
-    renderCart();
-  }
+    function addToCart(productId) {
+      const existing = cart.find(item => item.productId === productId);
 
-  function changeQty(productId, delta) {
-    const item = cart.find((i) => i.productId === productId);
-    if (!item) return;
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ productId, quantity: 1 });
+      }
 
-    item.quantity += delta;
-
-    if (item.quantity <= 0) {
-      cart = cart.filter((i) => i.productId !== productId);
+      renderCart();
     }
 
-    renderCart();
-  }
+    function changeQty(productId, delta) {
+      const item = cart.find(i => i.productId === productId);
+      if (!item) return;
 
-  function getCartDetailed() {
-    return cart
-      .map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        return {
-          ...item,
-          product,
-        };
-      })
-      .filter((item) => item.product);
-  }
+      item.quantity += delta;
 
-  function getCartTotal() {
-    return getCartDetailed().reduce((sum, item) => {
-      return sum + Number(item.product.price) * item.quantity;
-    }, 0);
-  }
+      if (item.quantity <= 0) {
+        cart = cart.filter(i => i.productId !== productId);
+      }
 
-  function renderCart() {
-    const items = getCartDetailed();
-
-    if (!items.length) {
-      cartBoxEl.innerHTML = `<div class="empty">Your cart is empty.</div>`;
-      stickyTotalEl.textContent = "AED 0";
-      checkoutBtn.disabled = true;
-      checkoutPanel.classList.add("hidden");
-      return;
+      renderCart();
     }
 
-    cartBoxEl.innerHTML =
-      items
-        .map((item) => {
+    function getCartDetailed() {
+      return cart
+        .map(item => {
+          const product = products.find(p => p.id === item.productId);
+          return { ...item, product };
+        })
+        .filter(item => item.product);
+    }
+
+    function getCartTotal() {
+      return getCartDetailed().reduce((sum, item) => {
+        return sum + Number(item.product.price) * item.quantity;
+      }, 0);
+    }
+
+    function renderCart() {
+      const items = getCartDetailed();
+
+      if (!items.length) {
+        cartBoxEl.innerHTML = `<div class="empty">Your cart is empty.</div>`;
+        stickyTotalEl.textContent = "AED 0";
+        checkoutBtn.disabled = true;
+        checkoutPanel.classList.add("hidden");
+        return;
+      }
+
+      cartBoxEl.innerHTML =
+        items.map(item => {
           const lineTotal = Number(item.product.price) * item.quantity;
 
           return `
@@ -531,97 +512,102 @@
                 <div class="cart-name">${escapeHtml(item.product.name)}</div>
                 <div class="cart-sub">AED ${Number(item.product.price).toFixed(0)} each</div>
                 <div class="qty">
-                  <button class="qty-btn" onclick="changeQty('${jsEscape(item.productId)}', -1)">−</button>
+                  <button type="button" class="qty-btn" onclick="changeQty('${jsEscape(item.productId)}', -1)">−</button>
                   <div class="qty-num">${item.quantity}</div>
-                  <button class="qty-btn" onclick="changeQty('${jsEscape(item.productId)}', 1)">+</button>
+                  <button type="button" class="qty-btn" onclick="changeQty('${jsEscape(item.productId)}', 1)">+</button>
                 </div>
               </div>
               <div class="price">AED ${lineTotal.toFixed(0)}</div>
             </div>
           `;
-        })
-        .join("") +
-      `
-        <div class="cart-total">
-          <span>Total</span>
-          <span>AED ${getCartTotal().toFixed(0)}</span>
-        </div>
-      `;
+        }).join("") +
+        `
+          <div class="cart-total">
+            <span>Total</span>
+            <span>AED ${getCartTotal().toFixed(0)}</span>
+          </div>
+        `;
 
-    stickyTotalEl.textContent = `AED ${getCartTotal().toFixed(0)}`;
-    checkoutBtn.disabled = false;
-  }
-
-  checkoutBtn.addEventListener("click", async () => {
-    if (!cart.length) return;
-
-    checkoutPanel.classList.remove("hidden");
-    checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-
-    const customerName = document.getElementById("customerName").value.trim();
-    const recipientName = document.getElementById("recipientName").value.trim();
-    const recipientPhone = document.getElementById("recipientPhone").value.trim();
-    const deliveryDate = document.getElementById("deliveryDate").value;
-    const deliverySlot = document.getElementById("deliverySlot").value;
-    const area = document.getElementById("area").value.trim();
-    const address = document.getElementById("address").value.trim();
-    const cardText = document.getElementById("cardText").value.trim();
-
-    if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
-      alert("Please fill in all required delivery details before payment.");
-      return;
+      stickyTotalEl.textContent = `AED ${getCartTotal().toFixed(0)}`;
+      checkoutBtn.disabled = false;
     }
 
-    const items = getCartDetailed().map((item) => ({
-      name: item.product.name,
-      price: Number(item.product.price),
-      quantity: item.quantity,
-    }));
+    checkoutBtn.addEventListener("click", async () => {
+      if (!cart.length) return;
 
-    try {
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items,
-          customerName,
-          recipientName,
-          recipientPhone,
-          deliveryDate,
-          deliverySlot,
-          area,
-          address,
-          cardText,
-        }),
-      });
+      checkoutPanel.classList.remove("hidden");
+      checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 
-      const data = await res.json();
+      const customerName = document.getElementById("customerName").value.trim();
+      const recipientName = document.getElementById("recipientName").value.trim();
+      const recipientPhone = document.getElementById("recipientPhone").value.trim();
+      const deliveryDate = document.getElementById("deliveryDate").value;
+      const deliverySlot = document.getElementById("deliverySlot").value;
+      const area = document.getElementById("area").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const cardText = document.getElementById("cardText").value.trim();
 
-if (data.url) {
-  window.location.href = data.url;
-  return;
-}
+      if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
+        alert("Please fill in all required delivery details before payment.");
+        return;
+      }
 
-alert("Could not start payment: " + JSON.stringify(data));
-console.log(data);
+      const items = getCartDetailed().map(item => ({
+        name: item.product.name,
+        price: Number(item.product.price),
+        quantity: item.quantity
+      }));
+
+      try {
+        const res = await fetch("/api/create-checkout-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            items,
+            customerName,
+            recipientName,
+            recipientPhone,
+            deliveryDate,
+            deliverySlot,
+            area,
+            address,
+            cardText
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+
+        alert("Could not start payment: " + JSON.stringify(data));
+        console.log(data);
+      } catch (error) {
+        alert("Payment error: " + error.message);
+        console.error(error);
+      }
     });
 
-  function escapeHtml(str) {
-    return String(str)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
 
-  function jsEscape(str) {
-    return String(str).replaceAll("\\", "\\\\").replaceAll("'", "\\'");
-  }
+    function jsEscape(str) {
+      return String(str)
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'");
+    }
 
-  loadProducts();
-</script>
+    loadProducts();
+  </script>
 </body>
 </html>
