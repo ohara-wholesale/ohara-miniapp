@@ -363,7 +363,7 @@
         <textarea id="cardText" placeholder="Card message"></textarea>
       </div>
       <div class="mini-note">
-        This is the checkout draft step. Payment and Telegram submission can be added next.
+        Please ensure that all delivery details are entered accurately to avoid potential delays in shipment.
       </div>
     </div>
   </div>
@@ -556,7 +556,22 @@ if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deli
 }
   checkoutPanel.classList.remove("hidden");
   checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+const customerName = document.getElementById("customerName").value.trim();
+const recipientName = document.getElementById("recipientName").value.trim();
+const recipientPhone = document.getElementById("recipientPhone").value.trim();
+const deliveryDate = document.getElementById("deliveryDate").value;
+const deliverySlot = document.getElementById("deliverySlot").value;
+const area = document.getElementById("area").value.trim();
+const address = document.getElementById("address").value.trim();
+const cardText = document.getElementById("cardText").value.trim();
 
+if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
+  alert("Please fill in all required delivery details before payment.");
+  checkoutPanel.classList.remove("hidden");
+  checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  return;
+}
+      
   const items = getCartDetailed().map(item => ({
     name: item.product.name,
     price: Number(item.product.price),
@@ -569,7 +584,17 @@ if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deli
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ items })
+      body: JSON.stringify({
+  items,
+  customerName,
+  recipientName,
+  recipientPhone,
+  deliveryDate,
+  deliverySlot,
+  area,
+  address,
+  cardText
+})
     });
 
     const data = await res.json();
