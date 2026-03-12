@@ -4,11 +4,54 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { items } = req.body || {};
+    const {
+      items,
+      customerName,
+      recipientName,
+      recipientPhone,
+      deliveryDate,
+      deliverySlot,
+      area,
+      address,
+      cardText
+    } = req.body || {};
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "No items provided" });
     }
+
+    if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
+      return res.status(400).json({ error: "Missing checkout fields" });
+    }
+
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const deliveryFee = 0;
+    const total = subtotal + deliveryFee;
+
+    const params = new URLSearchParams({
+      mode: "payment",
+      success_url: "https://app.ohara.ae?payment=success",
+      cancel_url: "https://app.ohara.ae?payment=cancel",
+      "line_items[0][price_data][currency]": "aed",
+      "line_items[0][price_data][product_data][name]": items
+        .map((item) => `${item.name} x${item.quantity}`)
+        .join(", "),
+      "line_items[0][price_data][unit_amount]": String(total * 100),
+      "line_items[0][quantity]": "1",
+
+      "metadata[source]": "telegram-miniapp",
+      "metadata[customer_name]": customerName,
+      "metadata[recipient_name]": recipientName,
+      "metadata[recipient_phone]": recipientPhone,
+      "metadata[delivery_date]": deliveryDate,
+      "metadata[delivery_slot]": deliverySlot,
+      "metadata[area]": area || "",
+      "metadata[address]": address,
+      "metadata[card_text]": cardText || "",
+      "metadata[subtotal_aed]": String(subtotal),
+      "metadata[delivery_fee_aed]": String(deliveryFee),
+      "metadata[total_aed]": String(total)
+    });
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
@@ -16,19 +59,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        mode: "payment",
-        success_url: "https://app.ohara.ae?payment=success",
-        cancel_url: "https://app.ohara.ae?payment=cancel",
-        "line_items[0][price_data][currency]": "aed",
-        "line_items[0][price_data][product_data][name]": items
-          .map((item) => `${item.name} x${item.quantity}`)
-          .join(", "),
-        "line_items[0][price_data][unit_amount]": String(
-          items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100
-        ),
-        "line_items[0][quantity]": "1",
-      }),
+      body: params,
     });
 
     const data = await stripeRes.json();
