@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     params.append("metadata[subtotal_aed]", String(subtotal));
     params.append("metadata[delivery_fee_aed]", String(deliveryFee));
     params.append("metadata[total_aed]", String(total));
-    params.append("metadata[items_json]", JSON.stringify(items));
+    params.append("metadata[items_json]", encodeURIComponent(JSON.stringify(items)));
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
