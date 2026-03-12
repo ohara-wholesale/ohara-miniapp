@@ -21,37 +21,48 @@ export default async function handler(req, res) {
     }
 
     if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
-      return res.status(400).json({ error: "Missing checkout fields" });
+      return res.status(400).json({
+        error: "Missing checkout fields",
+        debug: {
+          customerName,
+          recipientName,
+          recipientPhone,
+          deliveryDate,
+          deliverySlot,
+          address
+        }
+      });
     }
 
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
     const deliveryFee = 0;
     const total = subtotal + deliveryFee;
 
-    const params = new URLSearchParams({
-      mode: "payment",
-      success_url: "https://app.ohara.ae?payment=success",
-      cancel_url: "https://app.ohara.ae?payment=cancel",
-      "line_items[0][price_data][currency]": "aed",
-      "line_items[0][price_data][product_data][name]": items
-        .map((item) => `${item.name} x${item.quantity}`)
-        .join(", "),
-      "line_items[0][price_data][unit_amount]": String(total * 100),
-      "line_items[0][quantity]": "1",
+    const params = new URLSearchParams();
+    params.append("mode", "payment");
+    params.append("success_url", "https://app.ohara.ae?payment=success");
+    params.append("cancel_url", "https://app.ohara.ae?payment=cancel");
 
-      "metadata[source]": "telegram-miniapp",
-      "metadata[customer_name]": customerName,
-      "metadata[recipient_name]": recipientName,
-      "metadata[recipient_phone]": recipientPhone,
-      "metadata[delivery_date]": deliveryDate,
-      "metadata[delivery_slot]": deliverySlot,
-      "metadata[area]": area || "",
-      "metadata[address]": address,
-      "metadata[card_text]": cardText || "",
-      "metadata[subtotal_aed]": String(subtotal),
-      "metadata[delivery_fee_aed]": String(deliveryFee),
-      "metadata[total_aed]": String(total)
-    });
+    params.append("line_items[0][price_data][currency]", "aed");
+    params.append(
+      "line_items[0][price_data][product_data][name]",
+      items.map((item) => `${item.name} x${item.quantity}`).join(", ")
+    );
+    params.append("line_items[0][price_data][unit_amount]", String(Math.round(total * 100)));
+    params.append("line_items[0][quantity]", "1");
+
+    params.append("metadata[source]", "telegram-miniapp");
+    params.append("metadata[customer_name]", customerName);
+    params.append("metadata[recipient_name]", recipientName);
+    params.append("metadata[recipient_phone]", recipientPhone);
+    params.append("metadata[delivery_date]", deliveryDate);
+    params.append("metadata[delivery_slot]", deliverySlot);
+    params.append("metadata[area]", area || "");
+    params.append("metadata[address]", address);
+    params.append("metadata[card_text]", cardText || "");
+    params.append("metadata[subtotal_aed]", String(subtotal));
+    params.append("metadata[delivery_fee_aed]", String(deliveryFee));
+    params.append("metadata[total_aed]", String(total));
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
@@ -59,7 +70,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: params,
+      body: params.toString(),
     });
 
     const data = await stripeRes.json();
@@ -67,7 +78,7 @@ export default async function handler(req, res) {
     if (!stripeRes.ok) {
       return res.status(stripeRes.status).json({
         error: "Stripe error",
-        details: data,
+        stripe: data
       });
     }
 
@@ -76,6 +87,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error: "Server error",
       message: error.message,
+      stack: error.stack
     });
   }
 }
