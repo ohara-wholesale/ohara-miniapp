@@ -181,7 +181,39 @@ ${metadata.address || ""}
     `.trim();
 
     await sendTelegramMessage(message);
+    
+if (metadata.telegram_user_id) {
 
+  const itemsText = lineItems
+    .filter(item => item.description !== "Delivery")
+    .map(item => `${item.description} × ${item.quantity}`)
+    .join("\n");
+
+  const customerMessage = `
+Thank you for choosing Ohara Bunch 🌸
+
+Your order has been received.
+
+Order: ${order.id}
+
+${itemsText}
+
+Your flowers are being prepared.
+Our team will contact you shortly to confirm delivery.
+`.trim();
+
+  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      chat_id: metadata.telegram_user_id,
+      text: customerMessage
+    })
+  });
+
+}
     return res.status(200).json({ success: true });
   } catch (error) {
     return res.status(500).json({
