@@ -22,19 +22,14 @@ export default async function handler(req, res) {
 
     if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
       return res.status(400).json({
-        error: "Missing checkout fields",
-        debug: {
-          customerName,
-          recipientName,
-          recipientPhone,
-          deliveryDate,
-          deliverySlot,
-          address
-        }
+        error: "Missing checkout fields"
       });
     }
 
-    const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+    const subtotal = items.reduce((sum, item) => {
+      return sum + Number(item.price) * Number(item.quantity);
+    }, 0);
+
     const deliveryFee = 0;
     const total = subtotal + deliveryFee;
 
@@ -86,8 +81,7 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       error: "Server error",
-      message: error.message,
-      stack: error.stack
+      message: error.message
     });
   }
 }
