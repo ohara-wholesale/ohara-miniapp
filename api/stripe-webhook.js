@@ -1,3 +1,20 @@
+async function sendTelegramMessage(text) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+    }),
+  });
+}
+
 export const config = {
   api: {
     bodyParser: false,
@@ -62,8 +79,12 @@ function verifyStripeSignature(rawBody, signature, secret) {
   const crypto = require("crypto");
 
   const elements = signature.split(",");
-  const timestamp = elements.find(e => e.startsWith("t=")).split("=")[1];
-  const sig = elements.find(e => e.startsWith("v1=")).split("=")[1];
+  const timestamp = elements.find((e) => e.startsWith("t="))?.split("=")[1];
+  const sig = elements.find((e) => e.startsWith("v1="))?.split("=")[1];
+
+  if (!timestamp || !sig || !secret) {
+    return false;
+  }
 
   const signedPayload = `${timestamp}.${rawBody}`;
 
@@ -135,8 +156,33 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json({ success: true });
+    const itemsText = lineItems
+      .filter((item) => item.description !== "Delivery")
+      .map((item) => `• ${item.description} × ${item.quantity}`)
+      .join("\n");
 
+    const message = `
+🌸 <b>NEW ORDER</b>
+
+<b>Total:</b> AED ${Number(metadata.total_aed || 0)}
+
+<b>Items:</b>
+${itemsText || "—"}
+
+<b>Recipient:</b> ${metadata.recipient_name || ""}
+<b>Phone:</b> ${metadata.recipient_phone || ""}
+
+<b>Delivery:</b>
+${metadata.delivery_date || ""} • ${metadata.delivery_slot || ""}
+
+<b>Area:</b> ${metadata.area || ""}
+<b>Address:</b>
+${metadata.address || ""}
+    `.trim();
+
+    await sendTelegramMessage(message);
+
+    return res.status(200).json({ success: true });
   } catch (error) {
     return res.status(500).json({
       error: "Webhook error",
