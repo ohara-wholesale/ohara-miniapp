@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         price: fields["Price AED"] || 0,
         photo: fields.Photo?.[0]?.url || "",
         description: fields.Description || "",
-        category: fields.Category || "Other",
+        category: typeof fields.Category === "string" ? fields.Category : (Array.isArray(fields.Category) ? fields.Category[0] : "Other"),
         sort: fields.Sort || 999,
         stockStatus: fields["Stock Status"] || "",
         slug: fields.Slug || "",
