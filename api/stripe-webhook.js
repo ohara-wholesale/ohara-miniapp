@@ -108,7 +108,7 @@ export default async function handler(req, res) {
       "Area": metadata.area || "",
       "Address": metadata.address || "",
       "Card Text": metadata.card_text || "",
-      "Fee AED": Number(metadata.delivery_fee_aed || 0),
+      "Delivery Fee AED": Number(metadata.delivery_fee_aed || 0),
       "Total AED": Number(metadata.total_aed || 0),
       "Payment Status": "paid",
       "Order Status": "new",
