@@ -76,12 +76,13 @@ export default async function handler(req, res) {
       const items = JSON.parse(metadata.items_json);
 
       for (const item of items) {
-        await createRecord("Order items", {
-          Order: [order.id],
-          Name: item.name,
-          Quantity: item.quantity,
-          Price: item.price,
-        });
+       await createRecord("Order items", {
+  "Order ID": [order.id],
+  "Product name": item.name,
+  "Price snapshot": item.price,
+  "Quantity": item.quantity,
+  "Line total": item.price * item.quantity
+});
       }
     }
 
