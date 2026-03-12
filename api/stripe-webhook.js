@@ -39,6 +39,25 @@ async function createRecord(table, fields) {
   return data.records[0];
 }
 
+async function getStripeLineItems(sessionId) {
+  const res = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${sessionId}/line_items`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(JSON.stringify(data));
+  }
+
+  return data.data || [];
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).send("Method not allowed");
@@ -55,7 +74,7 @@ export default async function handler(req, res) {
     const session = event.data.object;
     const metadata = session.metadata || {};
 
-    const orderFields = {
+    const order = await createRecord("Orders", {
       "Recipient Name": metadata.recipient_name || "",
       "Recipient Phone": metadata.recipient_phone || "",
       "Delivery Date": metadata.delivery_date || "",
@@ -63,30 +82,40 @@ export default async function handler(req, res) {
       "Area": metadata.area || "",
       "Address": metadata.address || "",
       "Card Text": metadata.card_text || "",
-      "Subtotal AED": Number(metadata.subtotal_aed || 0),
-      "Delivery Fee AED": Number(metadata.delivery_fee_aed || 0),
+      "Fee AED": Number(metadata.delivery_fee_aed || 0),
       "Total AED": Number(metadata.total_aed || 0),
       "Payment Status": "paid",
       "Order Status": "new",
-    };
+    });
 
-    const order = await createRecord("Orders", orderFields);
+    const lineItems = await getStripeLineItems(session.id);
 
-    if (metadata.items_json) {
-      const items = JSON.parse(decodeURIComponent(metadata.items_json));
+    for (const item of lineItems) {
+      const productName = item.description || "Product";
+      const quantity = Number(item.quantity || 1);
 
-      for (const item of items) {
-       await createRecord("Order items", {
-  "Order ID": [order.id],
-  "Product name": item.name,
-  "Price snapshot": item.price,
-  "Quantity": item.quantity,
-  "Line total": item.price * item.quantity
-});
+      const lineTotal = Number(item.amount_total || 0) / 100;
+      const unitAmount = quantity > 0 ? lineTotal / quantity : 0;
+
+      if (productName === "Delivery") {
+        continue;
       }
+
+      await createRecord("Order items", {
+        "Item": `${productName} x${quantity}`,
+        "Order ID": [order.id],
+        "Product name": productName,
+        "Price snapshot": unitAmount,
+        "Quantity": quantity,
+        "Line total": lineTotal,
+      });
     }
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({
+      success: true,
+      orderId: order.id,
+      items: lineItems.length,
+    });
   } catch (error) {
     return res.status(500).json({
       error: "Webhook error",
