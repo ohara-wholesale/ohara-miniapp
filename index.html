@@ -599,18 +599,14 @@
 
       const data = await res.json();
 
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
+if (data.url) {
+  window.location.href = data.url;
+  return;
+}
 
-      alert("Could not start payment.");
-      console.log(data);
-    } catch (error) {
-      alert("Payment error.");
-      console.error(error);
-    }
-  });
+alert("Could not start payment: " + JSON.stringify(data));
+console.log(data);
+    });
 
   function escapeHtml(str) {
     return String(str)
