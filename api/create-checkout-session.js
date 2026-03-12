@@ -16,11 +16,11 @@ export default async function handler(req, res) {
       cardText
     } = req.body || {};
 
-    if (!items  !Array.isArray(items)  items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "No items provided" });
     }
 
-    if (!customerName  !recipientName  !recipientPhone  !deliveryDate  !deliverySlot || !address) {
+    if (!customerName || !recipientName || !recipientPhone || !deliveryDate || !deliverySlot || !address) {
       return res.status(400).json({ error: "Missing checkout fields" });
     }
 
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       return sum + Number(item.price) * Number(item.quantity);
     }, 0);
 
-    const deliveryFee = 0;
+    const deliveryFee = subtotal < 1000 ? 50 : 0;
     const total = subtotal + deliveryFee;
 
     const params = new URLSearchParams();
@@ -36,15 +36,26 @@ export default async function handler(req, res) {
     params.append("success_url", "https://app.ohara.ae?payment=success");
     params.append("cancel_url", "https://app.ohara.ae?payment=cancel");
 
-    params.append("line_items[0][price_data][currency]", "aed");
-    params.append(
-      "line_items[0][price_data][product_data][name]",
-      items.map((item) => `${item.name} x${item.quantity}`).join(", ")
-    );
-    params.append("line_items[0][price_data][unit_amount]", String(Math.round(total * 100)));
-    params.append("line_items[0][quantity]", "1");
+    items.forEach((item, index) => {
+      params.append(`line_items[${index}][price_data][currency]`, "aed");
+      params.append(`line_items[${index}][price_data][product_data][name]`, item.name);
+      params.append(
+        `line_items[${index}][price_data][unit_amount]`,
+        String(Math.round(Number(item.price) * 100))
+      );
+      params.append(`line_items[${index}][quantity]`, String(Number(item.quantity)));
+    });
+
+    if (deliveryFee > 0) {
+      const deliveryIndex = items.length;
+      params.append(`line_items[${deliveryIndex}][price_data][currency]`, "aed");
+      params.append(`line_items[${deliveryIndex}][price_data][product_data][name]`, "Delivery");
+      params.append(`line_items[${deliveryIndex}][price_data][unit_amount]`, String(deliveryFee * 100));
+      params.append(`line_items[${deliveryIndex}][quantity]`, "1");
+    }
 
     params.append("metadata[source]", "telegram-miniapp");
+    params.append("metadata[customer_name]", customerName);
     params.append("metadata[recipient_name]", recipientName);
     params.append("metadata[recipient_phone]", recipientPhone);
     params.append("metadata[delivery_date]", deliveryDate);
@@ -55,12 +66,11 @@ export default async function handler(req, res) {
     params.append("metadata[subtotal_aed]", String(subtotal));
     params.append("metadata[delivery_fee_aed]", String(deliveryFee));
     params.append("metadata[total_aed]", String(total));
-    params.append("metadata[items_json]", encodeURIComponent(JSON.stringify(items)));
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
-        Authorization: Bearer ${process.env.STRIPE_SECRET_KEY},
+        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: params.toString(),
