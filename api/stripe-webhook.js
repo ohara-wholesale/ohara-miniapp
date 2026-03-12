@@ -58,14 +58,40 @@ async function getStripeLineItems(sessionId) {
   return data.data || [];
 }
 
+function verifyStripeSignature(rawBody, signature, secret) {
+  const crypto = require("crypto");
+
+  const elements = signature.split(",");
+  const timestamp = elements.find(e => e.startsWith("t=")).split("=")[1];
+  const sig = elements.find(e => e.startsWith("v1=")).split("=")[1];
+
+  const signedPayload = `${timestamp}.${rawBody}`;
+
+  const expectedSig = crypto
+    .createHmac("sha256", secret)
+    .update(signedPayload)
+    .digest("hex");
+
+  return sig === expectedSig;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).send("Method not allowed");
   }
 
   try {
-    const rawBody = await buffer(req);
-    const event = JSON.parse(rawBody.toString());
+    const rawBodyBuffer = await buffer(req);
+    const rawBody = rawBodyBuffer.toString();
+
+    const signature = req.headers["stripe-signature"];
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!verifyStripeSignature(rawBody, signature, secret)) {
+      return res.status(400).send("Invalid Stripe signature");
+    }
+
+    const event = JSON.parse(rawBody);
 
     if (event.type !== "checkout.session.completed") {
       return res.status(200).json({ received: true });
@@ -97,9 +123,7 @@ export default async function handler(req, res) {
       const lineTotal = Number(item.amount_total || 0) / 100;
       const unitAmount = quantity > 0 ? lineTotal / quantity : 0;
 
-      if (productName === "Delivery") {
-        continue;
-      }
+      if (productName === "Delivery") continue;
 
       await createRecord("Order items", {
         "Item": `${productName} x${quantity}`,
@@ -111,11 +135,8 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      orderId: order.id,
-      items: lineItems.length,
-    });
+    return res.status(200).json({ success: true });
+
   } catch (error) {
     return res.status(500).json({
       error: "Webhook error",
