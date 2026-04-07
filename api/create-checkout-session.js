@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       params.append(`line_items[${deliveryIndex}][quantity]`, "1");
     }
 
-    params.append("metadata[source]", "telegram-miniapp");
+    params.append("metadata[source]", "app-ohara-ae");
     params.append("metadata[customer_name]", customerName);
     params.append("metadata[recipient_name]", recipientName);
     params.append("metadata[recipient_phone]", recipientPhone);
