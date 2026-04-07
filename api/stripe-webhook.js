@@ -120,6 +120,9 @@ export default async function handler(req, res) {
 
     const session = event.data.object;
     const metadata = session.metadata || {};
+    if (metadata.source !== "app-ohara-ae") {
+  return res.status(200).json({ ignored: true });
+}
 
     const order = await createRecord("Orders", {
       "Recipient Name": metadata.recipient_name || "",
